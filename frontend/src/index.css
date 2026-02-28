@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-sidebar: #0F172A;
+  --color-sidebar-hover: #1E293B;
+  --color-sidebar-active: #334155;
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-page-bg: #F8FAFC;
+  --color-card-bg: #FFFFFF;
+  --color-card-border: #E2E8F0;
+  --color-text-primary: #1E293B;
+  --color-text-secondary: #64748B;
+  --color-text-muted: #94A3B8;
+
+  /* Severity colors */
+  --color-severity-critical: #DC2626;
+  --color-severity-high: #EA580C;
+  --color-severity-medium: #D97706;
+  --color-severity-low: #16A34A;
+
+  /* Status colors */
+  --color-status-new: #2563EB;
+  --color-status-in-progress: #D97706;
+  --color-status-review: #7C3AED;
+  --color-status-escalated: #DC2626;
+  --color-status-closed: #16A34A;
+
+  /* Chart palette */
+  --color-chart-1: #2563EB;
+  --color-chart-2: #7C3AED;
+  --color-chart-3: #EC4899;
+  --color-chart-4: #F59E0B;
+  --color-chart-5: #10B981;
+  --color-chart-6: #EF4444;
+  --color-chart-7: #6366F1;
+  --color-chart-8: #06B6D4;
+
+  --font-sans: 'Inter', sans-serif;
+
+}

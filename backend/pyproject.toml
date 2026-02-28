@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aml-sentinel-backend"
+version = "1.0.0"
+description = "AML Sentinel — AI-powered Anti-Money Laundering Alert Investigation Assistant"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy[asyncio]",
+    "aiosqlite",
+    "alembic",
+    "pydantic",
+    "pydantic-settings",
+    "python-dotenv",
+    "google-genai",
+    "reportlab",
+    "python-multipart",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "httpx",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["api/tests"]
+
+[tool.coverage.run]
+source = ["api"]
+omit = [
+    "api/tests/*",
+    # AI-dependent modules are integration-tested with the real Gemini API.
+    # Run with RUN_REAL_API_TESTS=1 for full coverage of these files.
+    "api/services/ai_client.py",
+    "api/services/chat.py",
+    "api/services/checklist_ai.py",
+    "api/services/pattern_analysis.py",
+    "api/services/sar_generator.py",
+]
+concurrency = ["greenlet", "thread"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
