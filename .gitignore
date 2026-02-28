@@ -52,3 +52,6 @@ Thumbs.db
 
 # AI assistant config
 CLAUDE.md
+
+#Asana mcp config
+.mcp.json
