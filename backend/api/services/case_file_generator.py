@@ -22,6 +22,14 @@ from reportlab.platypus import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.core.pii_masker import (
+    mask_account_number,
+    mask_address,
+    mask_dob,
+    mask_email,
+    mask_id_number,
+    mask_phone,
+)
 from api.repositories.alert import AlertRepository
 from api.repositories.customer import CustomerRepository
 from api.repositories.investigation import (
@@ -263,7 +271,7 @@ async def generate_case_file_pdf(alert_id: str, session: AsyncSession) -> bytes:
     pep_label = "Yes" if customer.pep_status else "No"
     profile_data = [
         _field_row("Full Name", customer.full_name),
-        _field_row("Date of Birth", customer.date_of_birth),
+        _field_row("Date of Birth", mask_dob(customer.date_of_birth)),
         _field_row("Nationality", customer.nationality),
         _field_row("Occupation", customer.occupation),
         _field_row("Employer", customer.employer),
@@ -271,10 +279,10 @@ async def generate_case_file_pdf(alert_id: str, session: AsyncSession) -> bytes:
         _field_row("Risk Category", customer.risk_category),
         _field_row("Customer Since", customer.customer_since),
         _field_row("ID Type", customer.id_type),
-        _field_row("ID Number", customer.id_number),
-        _field_row("Address", customer.address),
-        _field_row("Phone", customer.phone),
-        _field_row("Email", customer.email),
+        _field_row("ID Number", mask_id_number(customer.id_number)),
+        _field_row("Address", mask_address(customer.address)),
+        _field_row("Phone", mask_phone(customer.phone)),
+        _field_row("Email", mask_email(customer.email)),
         _field_row("PEP Status", pep_label),
         _field_row("Previous Alerts", str(customer.previous_alert_count)),
         _field_row("KYC Verification", customer.kyc_verification_date),
@@ -301,7 +309,7 @@ async def generate_case_file_pdf(alert_id: str, session: AsyncSession) -> bytes:
         acct_rows = [acct_header]
         for acct in customer.accounts:
             acct_rows.append([
-                acct.account_number,
+                mask_account_number(acct.account_number),
                 acct.account_type,
                 acct.branch or "N/A",
                 acct.status,

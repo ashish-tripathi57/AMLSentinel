@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
+
+from api.core.pii_masker import mask_account_number
 
 
 class TransactionBase(BaseModel):
@@ -27,3 +29,13 @@ class TransactionResponse(TransactionBase):
     account_id: str
 
     model_config = {"from_attributes": True}
+
+
+class MaskedTransactionResponse(TransactionResponse):
+    """Transaction response with counterparty_account masked for DPDP Act compliance."""
+
+    @model_validator(mode="after")
+    def apply_pii_masking(self) -> "MaskedTransactionResponse":
+        """Mask the counterparty account number."""
+        self.counterparty_account = mask_account_number(self.counterparty_account)
+        return self

@@ -104,8 +104,8 @@ export function InvestigationPage() {
       <div className="flex-1 flex">
         <div className="flex-1 p-6">{renderSectionContent()}</div>
 
-        {/* Persistent chat panel — always visible */}
-        <div className="w-96 border-l border-card-border p-4 hidden lg:block">
+        {/* Persistent chat panel — always visible, stretches to bottom */}
+        <div className="w-96 border-l border-card-border p-4 hidden lg:block sticky top-0 h-screen overflow-hidden">
           <InvestigationChat alertId={resolvedAlertId} analystUsername={ANALYST_USERNAME} />
         </div>
       </div>

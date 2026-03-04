@@ -6,6 +6,7 @@ draft from the alert's investigation data and persists it via SARDraftRepository
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.core.pii_masker import mask_account_number
 from api.models.investigation import SARDraft
 from api.repositories.alert import AlertRepository
 from api.repositories.customer import CustomerRepository
@@ -77,7 +78,7 @@ async def generate_sar_draft(alert_id: str, session: AsyncSession) -> SARDraft:
 
     accounts = customer.accounts if hasattr(customer, "accounts") else []
     account_lines = [
-        f"  - {acc.account_number} ({acc.account_type})" for acc in accounts
+        f"  - {mask_account_number(acc.account_number)} ({acc.account_type})" for acc in accounts
     ]
     account_block = "\n".join(account_lines) if account_lines else "  (no accounts)"
 

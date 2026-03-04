@@ -58,12 +58,13 @@ DATABASE_URL=sqlite+aiosqlite:///./aml_sentinel.db
 DEBUG=false
 ```
 
-Seed the database and start the server:
+Start the server:
 
 ```bash
-python -m api.seed
 uvicorn api.main:app --reload --port 8001
 ```
+
+> The app auto-seeds the database with 20 synthetic AML alerts on first run. No manual seed step required.
 
 ### Frontend
 

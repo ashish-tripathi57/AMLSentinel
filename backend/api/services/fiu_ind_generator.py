@@ -5,6 +5,12 @@ covering four parts: Reporting Entity, Suspect Details, Transaction
 Details, and Reason for Suspicion.
 """
 
+# REGULATORY NOTICE — FIU-IND STR Filing
+# This generator produces Suspicious Transaction Reports for FIU-IND submission.
+# Full PII (name, DOB, ID, address, phone, email, account numbers) is INTENTIONALLY
+# included as required by PMLA 2002 and FIU-IND reporting guidelines.
+# DO NOT apply PII masking to this file.
+
 import io
 from datetime import datetime, timezone
 

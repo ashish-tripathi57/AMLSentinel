@@ -33,7 +33,7 @@ export function InvestigationChat({ alertId, analystUsername }: InvestigationCha
   }
 
   return (
-    <Card className="flex flex-col h-[600px]">
+    <Card className="flex flex-col h-full">
       <CardHeader>
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-text-primary">AI Investigation Chat</h3>

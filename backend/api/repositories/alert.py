@@ -127,7 +127,7 @@ class AlertRepository:
                 failed_ids.append(alert_id)
         return success_count, failed_ids
 
-    async def get_stats(self) -> dict:
+    async def get_stats(self, analyst: str | None = None) -> dict:
         """Get summary statistics for the alert queue."""
         total = await self.session.execute(select(func.count(Alert.id)))
         open_statuses = ["New", "In Progress", "Review", "Escalated"]
@@ -146,10 +146,19 @@ class AlertRepository:
                 Alert.status.in_(open_statuses),
             )
         )
+        my_alerts_count = 0
+        if analyst:
+            result = await self.session.execute(
+                select(func.count(Alert.id)).where(
+                    Alert.assigned_analyst == analyst,
+                )
+            )
+            my_alerts_count = result.scalar_one()
         return {
             "total_alerts": total.scalar_one(),
             "open_alerts": open_count.scalar_one(),
             "high_risk_count": high_risk.scalar_one(),
             "closed_count": closed_count.scalar_one(),
             "unassigned_count": unassigned_count.scalar_one(),
+            "my_alerts_count": my_alerts_count,
         }

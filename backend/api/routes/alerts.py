@@ -58,11 +58,12 @@ async def list_alerts(
 
 @router.get("/stats", response_model=dict)
 async def get_alert_stats(
+    analyst: str | None = None,
     session: AsyncSession = Depends(get_async_session),
 ) -> dict:
     """Return summary statistics for the alert queue dashboard."""
     repo = AlertRepository(session)
-    return await repo.get_stats()
+    return await repo.get_stats(analyst=analyst)
 
 
 @router.post("/bulk-close", response_model=BulkCloseResponse)

@@ -5,6 +5,11 @@ narrative sections: Subject Information, Activity Description, Narrative,
 Reason for Suspicion, and Action Taken.
 """
 
+# REGULATORY NOTICE — SAR PDF Filing
+# This generator produces Suspicious Activity Report PDFs for regulatory submission.
+# Full PII is INTENTIONALLY included as required by regulatory filing standards.
+# DO NOT apply PII masking to this file.
+
 import io
 from datetime import datetime, timezone
 

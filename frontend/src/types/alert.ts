@@ -26,6 +26,7 @@ export interface AlertStats {
   high_risk_count: number;
   closed_count: number;
   unassigned_count: number;
+  my_alerts_count: number;
 }
 
 export interface AlertFilters {

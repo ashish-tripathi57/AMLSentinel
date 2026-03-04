@@ -8,6 +8,14 @@ from collections.abc import AsyncIterator
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.core.pii_masker import (
+    mask_account_number,
+    mask_address,
+    mask_dob,
+    mask_email,
+    mask_id_number,
+    mask_phone,
+)
 from api.repositories.alert import AlertRepository
 from api.repositories.customer import CustomerRepository
 from api.repositories.investigation import ChatMessageRepository
@@ -22,7 +30,7 @@ def _build_customer_block(customer) -> str:
 
     lines = [
         f"Full Name: {customer.full_name}",
-        f"Date of Birth: {customer.date_of_birth or 'N/A'}",
+        f"Date of Birth: {mask_dob(customer.date_of_birth) or 'N/A'}",
         f"Nationality: {customer.nationality or 'N/A'}",
         f"Occupation: {customer.occupation or 'N/A'}",
         f"Employer: {customer.employer or 'N/A'}",
@@ -31,10 +39,10 @@ def _build_customer_block(customer) -> str:
         f"PEP Status: {'Yes' if customer.pep_status else 'No'}",
         f"Previous Alert Count: {customer.previous_alert_count}",
         f"Customer Since: {customer.customer_since or 'N/A'}",
-        f"ID: {customer.id_type or 'N/A'} — {customer.id_number or 'N/A'}",
-        f"Address: {customer.address or 'N/A'}",
-        f"Phone: {customer.phone or 'N/A'}",
-        f"Email: {customer.email or 'N/A'}",
+        f"ID: {customer.id_type or 'N/A'} — {mask_id_number(customer.id_number) or 'N/A'}",
+        f"Address: {mask_address(customer.address) or 'N/A'}",
+        f"Phone: {mask_phone(customer.phone) or 'N/A'}",
+        f"Email: {mask_email(customer.email) or 'N/A'}",
         f"KYC Verification Date: {customer.kyc_verification_date or 'N/A'}",
         f"KYC Last Update: {customer.kyc_last_update_date or 'N/A'}",
         f"Income Verification Notes: {customer.income_verification_notes or 'N/A'}",
@@ -50,7 +58,7 @@ def _build_accounts_block(customer) -> str:
     lines = []
     for acc in customer.accounts:
         lines.append(
-            f"  - {acc.account_number} | {acc.account_type} | {acc.branch or 'N/A'} | "
+            f"  - {mask_account_number(acc.account_number)} | {acc.account_type} | {acc.branch or 'N/A'} | "
             f"Status: {acc.status} | Balance: ₹{acc.current_balance:,.0f} | "
             f"Opened: {acc.opening_date or 'N/A'}"
         )
@@ -71,7 +79,7 @@ def _build_network_block(customer, transactions) -> str:
     account_labels: dict[str, str] = {}
     if customer and customer.accounts:
         for acc in customer.accounts:
-            account_labels[acc.id] = acc.account_number
+            account_labels[acc.id] = mask_account_number(acc.account_number) or acc.account_number
 
     # Aggregate flows per counterparty
     counterparty_flows: dict[str, dict] = {}

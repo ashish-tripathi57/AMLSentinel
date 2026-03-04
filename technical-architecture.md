@@ -875,6 +875,102 @@ graph LR
 
 ---
 
+## PII Masking Layer
+
+### Module Location
+
+`api/core/pii_masker.py`
+
+The PII masker is a pure-function module in the `core/` package — alongside `config.py`, `database.py`, and `auth.py`. It has no database dependencies and applies deterministic regex-based transformations. It is imported by schemas, route handlers, and services wherever masked data must be produced.
+
+### Masking Rules
+
+| Field | Mask Pattern | Input Example | Masked Output |
+|-------|-------------|---------------|---------------|
+| Phone | Middle 6 digits replaced with `*` | `+91-98-765432-10` | `+91-**-******-10` |
+| Email | Username fully replaced with `***` | `ramesh.kumar@gmail.com` | `***@gmail.com` |
+| ID number (PAN / Aadhaar) | First 2 chars + last 2 chars visible | `ABCDE1234F` | `AB******4F` |
+| Address | House number and street name replaced with `***` | `12, MG Road, Bengaluru 560001` | `***, ***, Bengaluru 560001` |
+| Date of birth | Year and month replaced with `****` / `**` | `1985-03-15` | `****-**-15` |
+| Account number | All but last 4 digits replaced with `*` | `1234567890123456` | `************3456` |
+
+### Integration Points
+
+#### Masked Pydantic Schemas
+
+Three response schemas apply masking on construction. They are defined in `api/schemas/` and used wherever the API returns customer or transaction data to the frontend.
+
+| Schema | Fields Masked | Used By |
+|--------|--------------|---------|
+| `MaskedCustomerResponse` | `phone`, `email`, `pan_number`, `date_of_birth`, `address` | Investigation routes — customer endpoint |
+| `MaskedAccountResponse` | `account_number` | Investigation routes — customer endpoint |
+| `MaskedTransactionResponse` | `counterparty_account` | Investigation routes — transactions endpoint |
+
+#### Route Layer
+
+`api/routes/investigation.py` uses the masked schemas for:
+
+- `GET /api/alerts/{id}/customer` — returns `MaskedCustomerResponse` + `MaskedAccountResponse`
+- `GET /api/alerts/{id}/transactions` — returns a list of `MaskedTransactionResponse`
+- `GET /api/alerts/{id}/network` — node data for the customer is masked before building the graph payload
+
+#### AI Service Layer
+
+The following services call `pii_masker` functions directly when constructing Gemini prompts so that PII is never embedded in text sent to the external AI provider:
+
+| Service | File | Masking Applied |
+|---------|------|----------------|
+| Chat | `api/services/chat.py` | Customer context block passed to Gemini has phone, email, ID, address, DOB masked |
+| Checklist AI | `api/services/checklist_ai.py` | Customer summary in the checklist auto-check prompt is masked |
+| SAR Generator | `api/services/sar_generator.py` | Account numbers in the SAR narrative prompt are masked |
+
+#### Case File PDF
+
+`api/services/case_file_generator.py` applies masking functions before rendering customer and account sections of the comprehensive case file PDF. This ensures that the PDF downloaded by the analyst via the InvestigationHeader export button does not contain raw PII.
+
+### Files Intentionally NOT Masked
+
+| File | Reason |
+|------|--------|
+| `api/services/fiu_ind_generator.py` | FIU-IND STR PDFs are regulatory filings that require complete PII; full data is read directly from the database |
+| `api/services/pdf_generator.py` | SAR PDFs are regulatory documents; full customer identity is required for a valid SAR submission |
+| `api/services/bulk_export.py` | Delegates to `fiu_ind_generator.py` for each alert; inherits the regulatory exception |
+| `api/routes/analytics.py` | Analytics endpoints return aggregated, non-personal data; no individual PII is present |
+| `api/routes/alerts.py` | Alert list and detail endpoints return alert-level fields (typology, risk score, status) without customer PII |
+
+### PII Masker Module Diagram
+
+```mermaid
+flowchart TD
+  subgraph "PII Masker Module"
+    M1[mask_phone]
+    M2[mask_email]
+    M3[mask_id_number]
+    M4[mask_address]
+    M5[mask_dob]
+    M6[mask_account_number]
+  end
+  subgraph "Masked Schemas"
+    S1[MaskedCustomerResponse]
+    S2[MaskedAccountResponse]
+    S3[MaskedTransactionResponse]
+  end
+  subgraph "Consumers"
+    C1[Investigation Routes]
+    C2[Chat Service]
+    C3[Checklist AI]
+    C4[SAR Generator]
+    C5[Case File PDF]
+  end
+  M1 & M2 & M3 & M4 & M5 --> S1
+  M6 --> S2 & S3
+  S1 & S2 & S3 --> C1
+  M1 & M2 & M3 & M4 & M5 & M6 --> C2 & C3 & C5
+  M6 --> C4
+```
+
+---
+
 ## Key Technical Patterns
 
 ### Async Database Access

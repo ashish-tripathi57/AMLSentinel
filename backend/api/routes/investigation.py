@@ -23,8 +23,9 @@ from api.repositories.investigation import (
     SARDraftRepository,  # noqa: F401 — imported for completeness
 )
 from api.repositories.transaction import TransactionRepository
-from api.schemas.account import AccountResponse
-from api.schemas.customer import CustomerResponse
+from api.core.pii_masker import mask_account_number
+from api.schemas.account import MaskedAccountResponse
+from api.schemas.customer import MaskedCustomerResponse
 from api.schemas.investigation import (
     AuditTrailEntryResponse,
     ChecklistItemResponse,
@@ -32,7 +33,7 @@ from api.schemas.investigation import (
     InvestigationNoteResponse,
     SimilarCaseResponse,
 )
-from api.schemas.transaction import TransactionResponse
+from api.schemas.transaction import MaskedTransactionResponse
 from api.services.ai_client import GeminiAPIError
 from api.services.case_file_generator import generate_case_file_pdf
 from api.services.checklist_ai import auto_check_item
@@ -46,10 +47,14 @@ router = APIRouter(prefix="/api/alerts/{alert_id}", tags=["investigation"])
 # ---------------------------------------------------------------------------
 
 
-class CustomerWithAccountsResponse(CustomerResponse):
-    """CustomerResponse extended with the customer's bank accounts."""
+class CustomerWithAccountsResponse(MaskedCustomerResponse):
+    """MaskedCustomerResponse extended with the customer's bank accounts.
 
-    accounts: list[AccountResponse] = []
+    PII fields (DOB, ID, address, phone, email) are masked via the parent
+    MaskedCustomerResponse model validator. Account numbers are also masked.
+    """
+
+    accounts: list[MaskedAccountResponse] = []
 
 
 class NetworkNode(BaseModel):
@@ -133,23 +138,23 @@ async def get_customer_profile(
             detail=f"Customer for alert '{alert_id}' not found",
         )
 
-    accounts = [AccountResponse.model_validate(acc) for acc in customer.accounts]
+    accounts = [MaskedAccountResponse.model_validate(acc) for acc in customer.accounts]
     return CustomerWithAccountsResponse(
-        **CustomerResponse.model_validate(customer).model_dump(),
+        **MaskedCustomerResponse.model_validate(customer).model_dump(),
         accounts=accounts,
     )
 
 
-@router.get("/transactions", response_model=list[TransactionResponse])
+@router.get("/transactions", response_model=list[MaskedTransactionResponse])
 async def get_transaction_timeline(
     alert_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-) -> list[TransactionResponse]:
+) -> list[MaskedTransactionResponse]:
     """Return all transactions linked to this alert.
 
     Combines flagged transactions (via the alert_transactions junction) and
     all account transactions for the alert's customer to give a complete
-    timeline view.
+    timeline view. Counterparty account numbers are masked for DPDP compliance.
     """
     alert = await _get_alert_or_404(str(alert_id), session)
 
@@ -165,7 +170,7 @@ async def get_transaction_timeline(
             seen_ids.add(txn.id)
             merged.append(txn)
 
-    return [TransactionResponse.model_validate(t) for t in merged]
+    return [MaskedTransactionResponse.model_validate(t) for t in merged]
 
 
 @router.get("/network", response_model=NetworkGraphResponse)
@@ -204,7 +209,7 @@ async def get_network_graph(
             account_node_id = f"account:{account.id}"
             nodes[account_node_id] = NetworkNode(
                 id=account_node_id,
-                label=account.account_number,
+                label=mask_account_number(account.account_number) or account.account_number,
                 type="account",
                 risk=None,
             )

@@ -7,6 +7,7 @@ full customer context, then persists the AI's verdict and rationale.
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.core.pii_masker import mask_account_number, mask_address, mask_id_number
 from api.repositories.alert import AlertRepository
 from api.repositories.customer import CustomerRepository
 from api.repositories.investigation import ChecklistRepository
@@ -42,13 +43,13 @@ def _build_customer_profile_block(customer) -> str:
         f"Employer: {customer.employer or 'Not stated'}",
         f"Declared Annual Income: {income_str}",
         f"Customer Since: {customer.customer_since or 'Unknown'}",
-        f"ID Type: {customer.id_type or 'N/A'} | ID Number: {customer.id_number or 'N/A'}",
+        f"ID Type: {customer.id_type or 'N/A'} | ID Number: {mask_id_number(customer.id_number) or 'N/A'}",
         f"KYC Verification Date: {kyc_verified}",
         f"KYC Last Updated: {kyc_updated}",
         f"Income Verification: {income_notes}",
         f"PEP Status: {'Yes' if customer.pep_status else 'No'}",
         f"Previous Alert Count: {customer.previous_alert_count}",
-        f"Address: {customer.address or 'Not on file'}",
+        f"Address: {mask_address(customer.address) or 'Not on file'}",
     ]
     return "\n".join(lines)
 
@@ -61,7 +62,7 @@ def _build_account_block(customer) -> str:
     lines = []
     for acc in customer.accounts:
         lines.append(
-            f"  - {acc.account_number} | {acc.account_type} | "
+            f"  - {mask_account_number(acc.account_number)} | {acc.account_type} | "
             f"Branch: {acc.branch or 'N/A'} | "
             f"Opened: {acc.opening_date or 'N/A'} | "
             f"Status: {acc.status} | "

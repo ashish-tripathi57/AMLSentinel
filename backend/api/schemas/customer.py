@@ -1,4 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
+
+from api.core.pii_masker import (
+    mask_address,
+    mask_dob,
+    mask_email,
+    mask_id_number,
+    mask_phone,
+)
 
 
 class CustomerBase(BaseModel):
@@ -30,3 +38,21 @@ class CustomerResponse(CustomerBase):
     id: str
 
     model_config = {"from_attributes": True}
+
+
+class MaskedCustomerResponse(CustomerResponse):
+    """Customer response with PII fields masked for DPDP Act compliance.
+
+    Masks: date_of_birth, id_number, address, phone, email.
+    Preserves: full_name (needed for investigation).
+    """
+
+    @model_validator(mode="after")
+    def apply_pii_masking(self) -> "MaskedCustomerResponse":
+        """Mask sensitive PII fields after model validation."""
+        self.date_of_birth = mask_dob(self.date_of_birth)
+        self.id_number = mask_id_number(self.id_number)
+        self.address = mask_address(self.address)
+        self.phone = mask_phone(self.phone)
+        self.email = mask_email(self.email)
+        return self

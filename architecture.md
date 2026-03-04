@@ -256,6 +256,52 @@ graph LR
 
 ---
 
+## PII Masking (DPDP Act 2023 Compliance)
+
+AML Sentinel applies a PII masking layer to protect personally identifiable information (PII) in compliance with India's Digital Personal Data Protection Act 2023 (DPDP Act 2023). The masking layer intercepts customer and account data before it reaches any external system or analyst-facing output that does not require full PII for its stated purpose.
+
+### Purpose
+
+Mask PII at the API boundary so that sensitive personal data never reaches:
+
+- **Frontend UI** — analysts see masked values in the investigation workbench (Customer Profile, Transaction Timeline, Network Graph)
+- **External AI (Gemini)** — AI prompts for chat, checklist auto-check, and SAR generation are constructed with masked PII
+- **Internal case file PDFs** — the comprehensive case file PDF downloaded during investigation uses masked values
+
+### What Is Masked
+
+| Field | Mask Pattern | Example |
+|-------|-------------|---------|
+| Date of birth | `****-**-DD` (year/month hidden) | `****-**-15` |
+| ID number (PAN, Aadhaar) | First 2 + last 2 visible, rest starred | `AB****1234` |
+| Address | House/flat number and street hidden | `*** ***, Bengaluru 560001` |
+| Phone number | Middle 6 digits starred | `+91-**-******-12` |
+| Email address | Username starred, domain preserved | `***@gmail.com` |
+| Account number | Last 4 digits visible, rest starred | `****-****-****-7890` |
+
+### What Is NOT Masked
+
+- **Full name** — required for investigation identity confirmation; names are not PII-masked
+- **Counterparty name** — required for transaction pattern and network analysis; counterparty names are not masked
+
+### Regulatory Exception — FIU-IND STR and SAR PDFs
+
+FIU-IND Suspicious Transaction Report PDFs and SAR PDFs used for regulatory filing with the Financial Intelligence Unit of India retain **full, unmasked PII**. These documents are generated directly from the database and are never passed through the masking layer. This exception exists because regulators require complete identifying information for a valid STR/SAR submission.
+
+### Masking Flow
+
+```mermaid
+flowchart LR
+  DB[(Database)] --> Masker[PII Masker]
+  Masker --> API[API Routes<br/>Masked]
+  Masker --> AI[AI Prompts<br/>Masked]
+  Masker --> CF[Case File PDF<br/>Masked]
+  DB --> STR[FIU-IND STR<br/>Full PII]
+  DB --> SAR[SAR PDF<br/>Full PII]
+```
+
+---
+
 ## Deployment Model
 
 AML Sentinel runs as two local processes during development:

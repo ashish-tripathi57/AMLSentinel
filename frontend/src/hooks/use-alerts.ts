@@ -37,12 +37,22 @@ const DEFAULT_SORT: SortState = {
   sort_order: 'desc',
 };
 
+interface UseAlertsOptions {
+  initialFilters?: Partial<AlertFilters>;
+  analyst?: string;
+}
+
 /**
  * Manages alert list state including filters, sorting, and pagination.
  * Fetches alerts and stats from the API whenever filters or sort state change.
  * Accepts optional initial filters to configure the first fetch.
  */
-export function useAlerts(initialFilters?: Partial<AlertFilters>): UseAlertsReturn {
+export function useAlerts(initialFiltersOrOptions?: Partial<AlertFilters> | UseAlertsOptions): UseAlertsReturn {
+  const isOptions = initialFiltersOrOptions !== undefined &&
+    ('initialFilters' in initialFiltersOrOptions || 'analyst' in initialFiltersOrOptions);
+  const options = isOptions ? (initialFiltersOrOptions as UseAlertsOptions) : undefined;
+  const initialFilters = isOptions ? options?.initialFilters : (initialFiltersOrOptions as Partial<AlertFilters> | undefined);
+  const analyst = options?.analyst;
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<AlertStats | null>(null);
@@ -75,12 +85,12 @@ export function useAlerts(initialFilters?: Partial<AlertFilters>): UseAlertsRetu
 
   const fetchStats = useCallback(async () => {
     try {
-      const response = await alertService.getStats();
+      const response = await alertService.getStats(analyst);
       setStats(response);
     } catch {
       // Stats are supplementary; silently ignore failures
     }
-  }, []);
+  }, [analyst]);
 
   useEffect(() => {
     fetchAlerts();

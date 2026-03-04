@@ -28,6 +28,6 @@ export const alertService = {
       { status, rationale, ...(resolution ? { resolution } : {}) }
     ),
 
-  getStats: () =>
-    apiClient.get<AlertStats>('/alerts/stats'),
+  getStats: (analyst?: string) =>
+    apiClient.get<AlertStats>(`/alerts/stats${analyst ? `?analyst=${encodeURIComponent(analyst)}` : ''}`),
 };
